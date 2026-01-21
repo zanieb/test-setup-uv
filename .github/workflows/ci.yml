@@ -1,0 +1,108 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install-latest:
+    name: install latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+      - name: Verify uv installation
+        run: |
+          uv --version
+          which uv
+
+  install-version:
+    name: install ${{ matrix.uv-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        uv-version: ["0.5.0", "0.5.10", "0.6.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+        with:
+          version: ${{ matrix.uv-version }}
+      - name: Verify uv version
+        run: |
+          uv --version
+          uv --version | grep -q "${{ matrix.uv-version }}"
+
+  install-constraint:
+    name: install ${{ matrix.version-constraint }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version-constraint: [">=0.5.0", ">=0.5.0,<0.6.0", "~=0.5.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+        with:
+          version: ${{ matrix.version-constraint }}
+      - name: Verify uv installation
+        run: uv --version
+
+  install-platform:
+    name: install on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+      - name: Verify uv installation
+        run: uv --version
+
+  install-python-version:
+    name: install with python-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+        with:
+          python-version: "3.12"
+      - name: Verify Python version
+        run: |
+          uv --version
+          uv run python --version
+          uv run python --version | grep -q "3.12"
+
+  install-caching:
+    name: install with caching
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+        with:
+          enable-cache: true
+      - name: Create a simple project and install deps
+        run: |
+          uv init test-project
+          cd test-project
+          uv add requests
+          uv run python -c "import requests; print('requests imported successfully')"
+
+  install-github-token:
+    name: install with github-token
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@zb/versions-ndjson
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify uv installation
+        run: uv --version
